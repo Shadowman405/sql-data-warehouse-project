@@ -1,24 +1,34 @@
 --- Check for duplicates
-SELECT cst_id, COUNT(*)
-FROM silver.crm_cust_info
-GROUP BY cst_id
-HAVING COUNT(*) > 1 OR cst_id IS NULL
+SELECT sls_ord_num, COUNT(*)
+FROM DataWareHouse.bronze.crm_sales_details
+GROUP BY sls_ord_num
+HAVING COUNT(*) > 1 OR sls_ord_num IS NULL
 
 --- Check for unwanted Spaces
-SELECT cst_lastname
-FROM silver.crm_cust_info
-WHERE cst_lastname != TRIM(cst_lastname)
+SELECT sls_prd_key
+FROM DataWareHouse.bronze.crm_sales_details
+WHERE sls_prd_key != TRIM(sls_prd_key)
 
 --- Data Standartization & Consistency
-SELECT DISTINCT cst_marital_status
-FROM silver.crm_cust_info
+SELECT DISTINCT prd_line
+FROM DataWareHouse.bronze.crm_prd_info
+
 
 --- Check for nulls or negative numbers
-SELECT prd_cost
-FROM DataWareHouse.bronze.crm_prd_info
-WHERE prd_cost < 0 OR prd_cost IS NULL
+SELECT sls_price
+FROM DataWareHouse.bronze.crm_sales_details
+WHERE sls_price < 0 OR sls_price IS NULL
 
 --- Check invalid dates 
 SELECT *
 FROM DataWareHouse.bronze.crm_prd_info
 WHERE prd_end_dt < prd_start_dt
+
+
+--- Check for invalid dates
+SELECT NULLIF(sls_order_dt, 0) as sls_order_dt
+FROM DataWareHouse.bronze.crm_sales_details
+WHERE sls_order_dt <= 0
+OR LEN(sls_order_dt) !=8
+OR sls_order_dt > 20500101
+OR sls_order_dt < 19000101
