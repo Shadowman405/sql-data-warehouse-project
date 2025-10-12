@@ -129,3 +129,17 @@ CASE WHEN TRIM(cntry) = 'DE' THEN 'Germany'
 	ELSE cntry
 END AS cntry
 FROM DataWareHouse.bronze.erp_loc_a101
+
+--- Insert erp_px_at_g1v2
+INSERT INTO DataWareHouse.silver.erp_px_at_g1v2(
+	id,
+	cat,
+	subcat,
+	maintenance
+)
+SELECT 
+	id,
+	cat,
+	subcat,
+	maintenance
+FROM DataWareHouse.bronze.erp_px_at_g1v2
