@@ -60,6 +60,7 @@ CAST (prd_start_dt AS DATE) as prd_start_dt,
 CAST(LEAD(prd_start_dt) OVER (PARTITION BY prd_key ORDER BY prd_start_dt) - 1 AS DATE) AS prd_end_dt
 FROM DataWareHouse.bronze.crm_prd_info
 
+
 --- Insert crm_sales_details
 INSERT INTO DataWareHouse.silver.crm_sales_details(
 	sls_ord_num,
@@ -95,3 +96,23 @@ CASE WHEN sls_price IS NULL OR sls_price <= 0
 	ELSE sls_price
 END AS sls_price
 FROM DataWareHouse.bronze.crm_sales_details
+
+--- Insert erp_cust_az12
+INSERT INTO DataWareHouse.silver.erp_cust_az12 (
+	cid,
+	bdate,
+	gen
+)
+SELECT 
+CASE WHEN cid LIKE 'NAS%' THEN SUBSTRING(cid, 4, LEN(cid))
+	ELSE cid
+END AS cid,
+CASE WHEN bdate > GETDATE() THEN NULL
+	ELSE bdate
+END AS bdate,
+CASE WHEN UPPER(TRIM(gen)) IN ('F', 'FEMALE') THEN 'Female'
+	 WHEN UPPER(TRIM(gen)) IN ('M', 'MALE') THEN 'Male'
+	 ELSE 'n/a'
+END AS gen
+FROM DataWareHouse.bronze.erp_cust_az12
+
