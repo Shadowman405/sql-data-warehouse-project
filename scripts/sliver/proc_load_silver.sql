@@ -17,8 +17,21 @@ Using Example:
 --- Inserting prd_start_dt
 CREATE OR ALTER PROCEDURE silver.load_silver  AS
 BEGIN
+	DECLARE @start_time DATETIME, @end_time DATETIME, @batch_start_time DATETIME, @batch_end_time DATETIME;
+	SET @batch_start_time = GETDATE();
+	BEGIN TRY
+		PRINT '================================================================================================';
+		PRINT 'Loading bronze layer';
+		PRINT '================================================================================================';
+	
+		PRINT '################################################################################################';
+		PRINT 'Loading CRM Tables';
+		PRINT '################################################################################################';
+
+	SET @start_time = GETDATE();
 	PRINT '>> Truncating Table: silver.crm_cust_info'
 	TRUNCATE TABLE DataWareHouse.silver.crm_cust_info
+
 	PRINT '>> Inserting Data Into: silver.crm_cust_info'
 	INSERT INTO DataWareHouse.silver.crm_cust_info (
 		cst_id,
@@ -48,11 +61,16 @@ BEGIN
 		FROM DataWareHouse.bronze.crm_cust_info
 		WHERE cst_id IS NOT NULL
 	)t WHERE flag_last = 1
+	SET @end_time = GETDATE();
+	PRINT '>> Load Duration: ' + CAST (DATEDIFF(second, @start_time, @end_time) AS NVARCHAR) + ' seconds';
+	PRINT '------------------------------------------------------------------------------------------------'
 
 
 	--- Insert crm_prd_info
+	SET @start_time = GETDATE();
 	PRINT '>> Truncating Table: silver.crm_prd_info'
 	TRUNCATE TABLE DataWareHouse.silver.crm_prd_info
+
 	PRINT '>> Inserting Data Into: silver.crm_prd_info'
 	INSERT INTO DataWareHouse.silver.crm_prd_info(
 		prd_id,
@@ -81,8 +99,13 @@ BEGIN
 	CAST(LEAD(prd_start_dt) OVER (PARTITION BY prd_key ORDER BY prd_start_dt) - 1 AS DATE) AS prd_end_dt
 	FROM DataWareHouse.bronze.crm_prd_info
 
+	SET @end_time = GETDATE();
+	PRINT '>> Load Duration: ' + CAST (DATEDIFF(second, @start_time, @end_time) AS NVARCHAR) + ' seconds';
+	PRINT '------------------------------------------------------------------------------------------------'
+
 
 	--- Insert crm_sales_details
+	SET @start_time = GETDATE();
 	PRINT '>> Truncating Table: silver.crm_sales_details'
 	TRUNCATE TABLE DataWareHouse.silver.crm_sales_details
 	PRINT '>> Inserting Data Into: silver.crm_sales_details'
@@ -120,8 +143,12 @@ BEGIN
 		ELSE sls_price
 	END AS sls_price
 	FROM DataWareHouse.bronze.crm_sales_details
+	SET @end_time = GETDATE();
+	PRINT '>> Load Duration: ' + CAST (DATEDIFF(second, @start_time, @end_time) AS NVARCHAR) + ' seconds';
+	PRINT '------------------------------------------------------------------------------------------------'
 
 	--- Insert erp_cust_az12
+	SET @start_time = GETDATE();
 	PRINT '>> Truncating Table: silver.erp_cust_az12'
 	TRUNCATE TABLE DataWareHouse.silver.erp_cust_az12
 	PRINT '>> Inserting Data Into: silver.erp_cust_az12'
@@ -142,8 +169,12 @@ BEGIN
 		 ELSE 'n/a'
 	END AS gen
 	FROM DataWareHouse.bronze.erp_cust_az12
+	SET @end_time = GETDATE();
+	PRINT '>> Load Duration: ' + CAST (DATEDIFF(second, @start_time, @end_time) AS NVARCHAR) + ' seconds';
+	PRINT '------------------------------------------------------------------------------------------------'
 
 	--- Insert erp_loc_a101
+	SET @start_time = GETDATE();
 	PRINT '>> Truncating Table: silver.erp_loc_a101'
 	TRUNCATE TABLE DataWareHouse.silver.erp_loc_a101
 	PRINT '>> Inserting Data Into: silver.erp_loc_a101'
@@ -159,9 +190,13 @@ BEGIN
 		ELSE cntry
 	END AS cntry
 	FROM DataWareHouse.bronze.erp_loc_a101
+	SET @end_time = GETDATE();
+	PRINT '>> Load Duration: ' + CAST (DATEDIFF(second, @start_time, @end_time) AS NVARCHAR) + ' seconds';
+	PRINT '------------------------------------------------------------------------------------------------'
 
 
 	--- Insert erp_px_at_g1v2
+	SET @start_time = GETDATE();
 	PRINT '>> Truncating Table: silver.erp_px_at_g1v2'
 	TRUNCATE TABLE DataWareHouse.silver.erp_px_at_g1v2
 	PRINT '>> Inserting Data Into: silver.erp_px_at_g1v2'
@@ -177,4 +212,23 @@ BEGIN
 		subcat,
 		maintenance
 	FROM DataWareHouse.bronze.erp_px_at_g1v2
+	SET @end_time = GETDATE();
+	PRINT '>> Load Duration: ' + CAST (DATEDIFF(second, @start_time, @end_time) AS NVARCHAR) + ' seconds';
+	PRINT '------------------------------------------------------------------------------------------------'
+
+	SET @batch_end_time = GETDATE();
+		PRINT '########################################################################################################'
+		PRINT 'Loading Bronze Layer is Completed'
+		PRINT '		- Total Load Duration: ' + CAST (DATEDIFF(second, @batch_start_time, @batch_end_time) AS NVARCHAR) + ' seconds';
+		PRINT '########################################################################################################'
+	END TRY
+	BEGIN CATCH
+		PRINT '==================================================================================================';
+		PRINT 'ERROR OCCURED DURING LOADING BRONZE LAYER';
+		PRINT 'ERROR MESSAGE' + ERROR_MESSAGE();
+		PRINT 'ERROR NUMBER' + CAST (ERROR_NUMBER() AS NVARCHAR);
+		PRINT 'ERROR MESSAGE' + CAST (ERROR_STATE() AS NVARCHAR);
+		PRINT '==================================================================================================';
+
+	END CATCH
 END
